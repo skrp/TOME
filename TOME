@@ -68735,6 +68735,219 @@ for my $line (@list)
 
 
 
+#######################################
+# archive.org mass scrape by collection
+
+           TWO STEPS TO SIMPLE QUE
+(( feeds 'get' api     https://raw.githubusercontent.com/skrp/HIVE/master/DEMON ))
+
+
+# 1 ###################################
+Output item identifiers of collection into que
+
+# 2 ###################################
+[A - Fetch all identifier htmls ]  
+[B - grep interested encodings ]
+[C - output download links by encoding ]
+
+
+ENCODINGS:
+  MP4
+  MP3
+  PDF
+  TXT
+  JPG
+  PNG
+  GIF
+  TIF
+  META
+  
+#!/usr/local/bin/perl
+# FreeBSD Locals Only
+###############################################################
+# archive.org identifier metadata html scrape entire collection
+
+# cursor api allows stepped requests from the server to 
+# get around only serving 10k identifier requests at a time
+# each raw dump named after count
+
+# collection example: americana
+my ($collection) = @ARGV;
+if ( not defined $collection ) { die "usage: ARG1 collection from archive.org"; }
+
+my $url='https://archive.org/services/search/v1/scrape?debug=false&total_only=false&count=10000&fields=identifier&q=collection%3A('.$collection.')%20';
+
+my $count = 0;
+get($url, $count);
+
+open(my $tfh, '<', '0');
+my @lines = readline $tfh; 
+close $tfh; chomp @lines;
+
+my $cursor = @lines[0];
+$cursor =~ s?.*\"cursor\":\"??;
+$cursor =~ s?".*??;
+
+my $total = @lines[0];
+my $total =~ s?.*","total":??;
+$total =~ s?}??;
+my $reps = $total / 10000;
+
+$count++;
+$reps++;
+while ($count < $reps)
+{
+	print "$count $cursor\n";
+	my $iurl = 'https://archive.org/services/search/v1/scrape?debug=false&total_only=false&count=10000&fields=identifier&q=collection%3A('.$collection.')%20&cursor='.$cursor;
+	get($iurl, $count);
+	
+# SUBS #####################################################
+sub get
+{
+	my ($i, $count) = @_;
+	my $response = $UA->get($i, ':content_file'=>"$count");
+}
+
+# FETCH IDENIFIERS ################################
+while [ $count -lt $reps ]
+do
+	printf "$count $cursor\n";
+	iurl='https://archive.org/services/search/v1/scrape?debug=false&total_only=false&count=10000&fields=identifier&q=collection%3A('$collection')%20&cursor='$cursor;
+	fetch -o $count $iurl;
+	cursor=$( sed 's/.*"cursor":"//' $count | sed 's/","previous.*//')
+	((count++));
+done
+# SANITIZE IDENTIFIERS #############################
+((count--)); # remove trailing ++
+for ((file=0; file<=$count; file++))
+do
+	sed 's/.*\[//' $file | sed 's/\].*//' | sed 's/"identifier"//g' | sed 's/[{}":]//g' | tr , '\n' >> tmp;
+	sed 's|^|https://archive.org/download/|' tmp > que;
+	printf "$file sanitized\n"; 
+done
+rm tmp;
+# FETCH METADATA ###################################
+while read -r line
+do
+	name=$( echo $line | sed 's|.*download/|| )
+	fetch -o dump/$name $line;
+	sleep 1;
+done < "que"
+
+#!/usr/local/bin/bash
+# FreeBSD Locals Only
+###############################################################
+# archive.org identifier metadata html scrape entire collection
+
+# cursor api allows stepped requests from the server to 
+# get around only serving 10k identifier requests at a time
+# each raw dump named after count
+
+# collection example: americana
+printf "USAGE: ARG1 collection";
+collection=$1 # refer to archive.org
+count=0
+# TYPE SPECIFIED
+#type=$2 # refer to archive.org
+
+# INITIATE #########################################
+# necessary to get first cursor
+url='https://archive.org/services/search/v1/scrape?debug=false&total_only=false&count=10000&fields=identifier&q=collection%3A('$collection')%20'
+fetch -o $count $url;
+cursor=$( sed 's/.*"cursor":"//' 0 | sed 's/".*//' )
+((count++))
+
+total=$( sed 's/.*","total"://' 0 | sed 's/}//' )
+reps=$((total / 10000))
+((reps++))
+
+# FETCH IDENIFIERS ################################
+while [ $count -lt $reps ]
+do
+	printf "$count $cursor\n";
+	iurl='https://archive.org/services/search/v1/scrape?debug=false&total_only=false&count=10000&fields=identifier&q=collection%3A('$collection')%20&cursor='$cursor;
+	fetch -o $count $iurl;
+	cursor=$( sed 's/.*"cursor":"//' $count | sed 's/","previous.*//')
+	((count++));
+done
+# SANITIZE IDENTIFIERS #############################
+((count--)); # remove trailing ++
+for ((file=0; file<=$count; file++))
+do
+	sed 's/.*\[//' $file | sed 's/\].*//' | sed 's/"identifier"//g' | sed 's/[{}":]//g' | tr , '\n' >> tmp;
+	sed 's|^|https://archive.org/download/|' tmp > que;
+	printf "$file sanitized\n"; 
+done
+rm tmp;
+# FETCH METADATA ###################################
+while read -r line
+do
+	name=$( echo $line | sed 's|.*download/|| )
+	fetch -o dump/$name $line;
+	sleep 1;
+done < "que"
+
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+#################################################################
+# archive.org - get identifier meta htmls & scrape encoding links
+my ($dir, $dump) = @ARGV;
+
+my $url0 = 'https://archive.org/download/';
+my (@txt, @mp4, @pdf, @jpg, @tif, @mp3, @gif, @meta, @png); 
+
+opendir(my $DH, $dir);
+my @dir = <$DH>;
+for my $file (@dir)
+{
+	open($ifh, '<', "$dump$file");
+	my @i = <$ifh>;
+	for (@i)
+	{
+		my $link = $_;
+		$link =~ s?<a href="??; $link =~ s?">.*??;
+		
+		if (/\.txt/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @txt, $url3; }
+		if (/\.mp4/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @mp4, $url3; }
+		if (/\.pdf/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @pdf, $url3; }
+		if (/\.jpg/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @jpg, $url3; }
+		if (/\.tif/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @mp3, $url3; }
+		if (/\.gif/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @gif, $url3; }
+		if (/\.tif/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @tif, $url3; }
+		if (/\.png/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @png, $url3; }
+		if (/_meta\.xml/ $link)
+			{ my $url3 = $url.$file.'/'.$link; push @meta, $url3; }
+	}
+}	
+open ($txtfh, <, 'txt');
+print $fh @txt;
+open ($mp4fh, <, 'mp4');
+print $mp4fh @mp4;
+open ($mp3fh, <, 'mp3');
+print $mp3fh @mp3;
+open ($jpgfh, <, 'jpg');
+print $jpgfh @jpg;
+open ($pngfh, <, 'png');
+print $pngfh @png;
+open ($pdffh, <, 'pdf');
+print $pdffh @pdf;
+open ($tiffh, <, 'tif');
+print $tiffh @tif;
+open ($giffh, <, 'gif');
+print $giffh @gif;
+open ($metafh, <, 'meta');
+print $metafh @meta;
+	
+	
 
 
 
