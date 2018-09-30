@@ -67353,22 +67353,53 @@ REFERENCES
 [0] https://www.openbsd.org/users.html
 [1] http://www.cnn.com/2017/03/08/politics/james-comey-privacy-cybersecurity/
 [2] https://www.ibm.com/developerworks/aix/library/au-openbsd.html
-###############################
-# Anarchist Archive – perl code
 
+##############################################
+# MKRX - Meri Kann cibR punX Anarchist Archive
+##############################################
+https://ibin.co/38jDMZqbLlBS.jpg
+https://drive.google.com/open?id=0B9G8ShajIbYfRGNHakVkdXg5MTA
+##############################################
+[1 - 4] : SICC PROCESS
+1_XS.pl - extract & standardize
+2_BLKR.pl - block a file apart
+3_MS.c - multiple-slicr
+3_SLICR.c - random file slicer
+3_slicr.c - random file slicer
+4_BUILD.c - build data to file
+##############################################
+[a - o] : MKRX TOOLSET
+a_SCRUB.pl - verifies the file to its sha
+b_CHKMETA.pl - confirms uniq file has metadata
+c_UNIQ.pl - checks sha against archive
+d_SHA.pl - recursive sha extraction
+e_POP.pl - use list to populate dump
+g_METAMASTER - scrape metadata-files to metadata masterfiles
+h_FILT.pl - terminal interface *****************
+i_CENSUS.pl - list of node-locations by file
+j_LONE.pl - find unduped files
+k_CNT.pl - count pool
+l_BORED.pl - hang-out-data
+m_BEEP.pl - ping drive
+n_CP.pl - copy list of files
+o_MV.pl - move list of files
+##############################################
+# SUMMARY
+Each file named as its sha
+Metadata is stored as 'g'$sha
 
-# XS.pl 	- standardizated recursive file rip
-# SCRUB.pl 	- verify file sha
-# CHKMETA.pl - confirms file has metadata
-# UNIQ.pl 	- checks sha unique against archive
-# SHA.pl 	- recursive sha extraction
-# POP.pl 	- use list to populate dump
-# INDEX.pl 	- create meta masterlists
-# HASH.pl 	- create hash files from meta
-# FILT.pl 	- terminal interface *****************
-# XS 		– shell script
+ZFS over BSD SICC Implementation:
 
-###################
+Files are split into blocks
+Named after the sha256sum
+
+Data & metadata isolated
+Data able to be pulic yet private
+##############################################
+{usb} = code = {user} 
+  key            auth
+code => data => {file}
+##############################################
 # SUMMARY
 Preserving more than 10+ Million
 Unique files of significance
@@ -67389,14 +67420,13 @@ This isolation of metadata from data
 Allows for public gibberish
 To be private information
 
+#################################
 
-
-
-#/////////////////////////////////////////////////////////////////////////////////////////////
 #!/usr/local/bin/perl
 use strict;use warnings;
-######################################################
-# Xtract & Standardize - rip recursive standardization
+#####################################################
+# Xtrac & Standardize - rip recursive standardization
+# - - - - - - - - feat. https://github.com/kentfredric
 use File::Find::Rule;
 use Digest::SHA ();
 use Parallel::ForkManager;
@@ -67405,9 +67435,9 @@ use File::LibMagic;
 
 ########################
 # USAGE
-my ($target, $dump) = @ARGV;
-if (not defined $target) { die "usage: TARGET ARGV[0] & dump argv[1]"; }
-if (not defined $dump) { die "usage: target argv[0] & DUMP ARGV[1]"; }
+my ( $target, $dump ) = @ARGV;
+if ( not defined $target ) { die "usage: TARGET ARGV[0] & dump argv[1]"; }
+if ( not defined $dump ) { die "usage: target argv[0] & DUMP ARGV[1]"; }
 
 #########################
 # JOBS
@@ -67424,8 +67454,8 @@ $manager->set_waitpid_blocking_sleep(0);
 
 my @spool;
 while ( defined( my $file = $rule->match ) ) {
-        push @spool, $file;
-        run_spooled() if JOBS_PER_WORKER <= @spool;
+	push @spool, $file;
+	run_spooled() if JOBS_PER_WORKER <= @spool;
 }
 
 run_spooled() if @spool;
@@ -67433,81 +67463,832 @@ run_spooled() if @spool;
 $manager->wait_all_children;
 
 sub run_spooled {
-        my (@jobs) = splice @spool, 0, JOBS_PER_WORKER, ();
+	my (@jobs) = splice @spool, 0, JOBS_PER_WORKER, ();
 
-        my $pid = $manager->start and return;
-        for my $file (@jobs) {
-                my ($sha) = file_digest($file) or die "couldn't sha $file";
-                File::Copy::copy( $file, "$dump/pool/$sha");
-                my $cur = "$dump/g/g$sha";
-                open my $fh, '>>', $cur or die "Meta File Creation FAIL $file";
-                printf {$fh} "%s\n%s\n%s\n%s\n", 
-                        name($file),
-                        path($file),
-                        size($file),
-                        file_mime_encoding($file);
-        }
-        
-        $manager->finish;
+	my $pid = $manager->start and return;
+	for my $file (@jobs) {
+		my ($sha) = file_digest($file) or die "couldn't sha $file";
+		File::Copy::copy( $file, "$dump/pool/$sha");
+		my $cur = "$dump/g/g$sha";
+		open my $fh, '>>', $cur or die "Meta File Creation FAIL $file";
+		printf {$fh} "%s\n%s\n%s\n%s\n", 
+			name($file),
+			path($file),
+			size($file),
+			file_mime_encoding($file);
+	}
+	
+	$manager->finish;
 }
 
 sub file_digest {
-        my ($filename) = @_;
-        my $digester = Digest::SHA->new('sha256');
-        $digester->addfile( $filename, 'b' );
-        return $digester->hexdigest;
+	my ($filename) = @_;
+	my $digester = Digest::SHA->new('sha256');
+	$digester->addfile( $filename, 'b' );
+	return $digester->hexdigest;
 }
 
 sub name {
-        my ($filename) = @_;
-        $filename =~ s#^.*/##;
-        return $filename;
+	my ($filename) = @_;
+	$filename =~ s#^.*/##;
+	return $filename;
 }
 
 sub path {
-        my ($filename) = @_;
-        $filename =~ s#/#_#g;
-        return $filename; 
+	my ($filename) = @_;
+	$filename =~ s#/#_#g;
+	return $filename; 
 }
 
 sub file_mime_encoding {
-        my ($filename) = @_;
-        my $info = $magic->info_from_filename($filename);
-        my $des = $info->{description};
-        $des =~ s#[/ ]#.#g;
-        $des =~ s/,/_/g;
-        my $md = $info->{mime_type};
-        $md =~ s#[/ ]#.#g;
-        my $enc = sprintf("%s %s %s", $des, $md, $info->{encoding}); 
-        return $enc;
+	my ($filename) = @_;
+	my $info = $magic->info_from_filename($filename);
+	my $des = $info->{description};
+	$des =~ s#[/ ]#.#g;
+	$des =~ s/,/_/g;
+	my $md = $info->{mime_type};
+	$md =~ s#[/ ]#.#g;
+	my $enc = sprintf("%s %s %s", $des, $md, $info->{encoding}); 
+	return $enc;
 }
-        
+	
 sub size {
-        my $size = [ stat $_[0] ]->[7];
-        return $size;
+	my $size = [ stat $_[0] ]->[7];
+	return $size;
 }
 
-#/////////////////////////////////////////////////////////////////////////////////////////////
 #!/usr/local/bin/perl
-######################################################
-#  SCRUB CRONJOB
 use strict; use warnings;
-use Digest::SHA ();
-use File::Find::Rule;
-###############################
-# USAGE
-my ($dir, $log)=@ARGV;
-open(my $lfh, '>>', $log) or die("Can't open $log\n");
-###############################
-# BEGIN
-my $rule=File::Find::Rule->file()->start($dir);
-while (defined(my $file=$rule->match)) {
-      my $sha=file_digest($file) or die "couldn't sha $file";
-        $file =~ s/.*\///;
-      if ($sha eq $file) { next; }
-      else {  print {$lfh} "$file: ALERT FKN ENTROPY!\n"; }
+use File::Path; use File::Copy;
+use Digest::SHA qw(sha256_hex); 
+use Time::HiRes 'gettimeofday', 'tv_interval';
+######################################################
+# BLKR - shreds file into standard-sized blocks
+
+# INIT ###############################################
+my ($que, $path) = @ARGV;
+if (not defined $que) { die ('NO ARGV1 que'); }
+if (not defined $path) { die ('NO ARGV2 dir'); }
+if (substr($path, -1) ne "/")
+	{ $path .= '/'; }
+
+# DIRS ###############################################
+# sea/ : blkr()
+# key/ : key()
+# graveyard/ : tombstone()
+# g/ : XS()
+# pool/ : XS()
+
+# PREP ###############################################
+my $name = name();
+chdir('/tmp/');
+my $RATE = 100; 
+my $size = 128000;
+my $count = 0;
+
+my $dump = "$name"."_dump/";
+my $log = "$name"."_log";
+
+mkdir $dump or die "dump FAIL\n";
+open(my $Lfh, '>>', $log);
+my $born = gmtime();
+my $btime = TIME(); 
+print $Lfh "HELLOWORLD $btime\n";
+
+# WORK ################################################
+open(my $qfh, '<', $que) or die "cant open que\n";
+my @QUE = readline $qfh; chomp @QUE;
+
+my $ttl = @QUE; 
+print $Lfh "ttl $ttl\n"; 
+
+foreach my $i (@QUE)
+{
+	print $Lfh "started $i\n";
+	blkr($i);
+	$count++;
+	if ($count % 100 == 0)
+		{ print "$count : $ttl\n"; }
 }
-sub file_digest {
+my $dtime = TIME(); print $Lfh "FKTHEWRLD $dtime\n";
+
+# SUB ###########################################################
+sub TIME
+{
+	my $t = localtime;
+	my $mon = (split(/\s+/, $t))[1];
+	my $day = (split(/\s+/, $t))[2];
+	my $hour = (split(/\s+/, $t))[3];
+	my $time = $mon.'_'.$day.'_'.$hour;
+	return $time;
+}
+sub name
+{
+	my $id = int(rand(999));
+	my $name = $$.'_'.$id;
+	return $name;
+}
+# API ###########################################################
+sub blkr
+{
+	my ($i) = @_;
+	my $block = 0;
+	my $ipath = $path.'pool/'.$i;
+	open(my $ifh, '<', "$ipath") || die "Cant open $i: $!\n";
+	binmode($ifh);
+	
+	my $istart = gettimeofday();
+	my $cunt = 0;
+	while (read($ifh, $block, $size))
+	{
+		my $bsha = sha256_hex($block);
+		my $bname = $path.'sea/'.$bsha;
+		open(my $fh, '>', "$bname");
+		binmode($fh);
+
+		print $fh $block;
+		key($i, $bsha);
+		$cunt++;
+	}
+	print $Lfh "YAY $i\n";
+
+	my $elapsed = gettimeofday()-$istart;
+	print "$i : $cunt : $elapsed \n";	
+}
+sub key
+{
+	my ($i, $bsha) = @_;
+	my $kpath = $path.'key/'.$i;
+	open(my $kfh, '>>', "$kpath");
+	print $kfh "$bsha\n";
+}
+
+//#####################################
+// MS - mulitSLICR - shred file into randome parts without verification cost
+//                 - the file can be verified later over time, audits over over-resource-consumption
+//                 - this code will be acceptable until an error is found
+// FreeBSD - unix is hacker all else is hack
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <sha256.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+// GLOBAL
+#define SHALEN 66
+#define SIZE 1000000 // 1B -> 1MB
+#define MAX 10000 // list
+
+static void usage() { printf("usage: SLICR target_list target_path dump_path key_path\n"); exit(1); }
+
+int slicr(char *target_file, char *dump_path, char *key_path);
+int build(char *f_block, char *v_file);
+
+int main(int argc, char *argv[])
+{
+  struct stat st_dump;
+  char *target_list, *target_path, *dump_path, *key_path, *target_file;
+  arg_chk();
+
+  target_list = malloc(strlen(argv[1] + SHALEN)); strcpy(target_list, argv[1]);
+  target_path = malloc(strlen(argv[2] + SHALEN)); strcpy(target_path, argv[2]); if (target_path[strlen(target_path) - 1] != '/') { strcat(target_path, "/"); }
+  dump_path = malloc(strlen(argv[3] + SHALEN)); strcpy(dump_path, argv[3]); if (dump_path[strlen(dump_path) - 1] != '/') { strcat(dump_path, "/"); }
+  key_path = malloc(strlen(argv[4] + SHALEN)); strcpy(key_path, argv[4]); if (key_path[strlen(key_path) - 1] != '/') { strcat(key_path, "/"); }
+// LIST ###############################
+  FILE *lfp;
+  char list_line[SHALEN];
+
+  if ((lfp = fopen(target_list, "rb")) < 0) { printf("FAIL fopen(fp) at: %s\n", target_list); }
+  while (fgets(list_line, SHALEN, lfp) != NULL)
+  {
+    if (list_line[strlen(list_line) - 1] == '\n') { list_line[strlen(list_line) - 1] = '\0'; }
+// WORK LIST ##########################
+    target_file = malloc(strlen(target_path) + SHALEN);
+    strcpy(target_file, target_path);
+    strcat(target_file, list_line);
+// ACTION
+    slicr(target_file, dump_path, key_path);
+//  cleanup
+    free(target_file);
+  }
+  free(target_path); free(dump_path); free(key_path); free(target_list);
+}
+// slicr ##############################
+int slicr(char *target_file, char *dump_path, char *key_path)
+{
+// DECLARE
+  FILE *fp, *kfp, *kkfp;
+  unsigned long long int f_size, position = 0;
+  char *f_sha, *v_sha; char *f_key, *v_file;
+  char k_line[SHALEN];
+// TARGET FILE
+  if ((fp = fopen(target_file, "rb")) < 0) { printf("FAIL fopen(fp) at%s\n", target_file); }
+// FILE SIZE
+  fseek(fp, 0, SEEK_END); f_size = ftell(fp); fseek(fp, 0, SEEK_SET);
+// SHA
+  f_sha = SHA256_File(target_file, NULL);
+// KEY FILE
+  f_key = malloc(strlen(key_path) + 100);
+  strcpy(f_key, key_path);
+  strcat(f_key, f_sha);
+  if ((kfp = fopen(f_key, "wb")) < 0) { printf("FAIL fopen(f_key) at: %s\n", key_path); exit(1); }
+
+  while (position < f_size)
+  {
+// SLICE //////////////////////////////
+    FILE *bbfp;
+    uint32_t size, read_size;
+    char *buf, *b_sha, *ff_block;
+
+    size = arc4random((uint32_t) SIZE); if (size == 0) { continue; }
+
+    if (position + size >= f_size) { size = f_size - position; }
+
+    if ((buf = malloc(size)) == NULL) { printf("FAIL memory buf pos: %llu\n", position); exit(1); }
+
+    if ((read_size = fread(buf, 1, (size_t) size, fp)) != size) { printf("FAIL read mismatch size: %u read_size: %u\n", size, read_size); exit(1); }
+
+    b_sha = SHA256_FileChunk(target_file, NULL, (off_t) position, (off_t) size);
+
+    ff_block = malloc(strlen(dump_path) + SHALEN); strcpy(ff_block, dump_path); strcat(ff_block, b_sha);
+
+    if ((bbfp = fopen(ff_block, "wb")) < 0) { printf("FAIL ff_block open pos: %llu\n", position); exit(1); }
+
+    if ((fwrite(buf, 1, (size_t) size, bbfp)) != size) { printf("FAIL write block: %llu \n", position); exit(1); }
+
+    fwrite(b_sha, 1, 64, kfp); fwrite("\n", 1, 1, kfp);
+
+    position += size;
+///////////////////////////////////////
+// cleanup
+    free(buf); free(b_sha); free(ff_block);
+    fclose(bbfp);
+  }
+  fclose(fp); fclose(kfp);
+  free(f_key); free(f_sha);
+  return 0;
+}
+// arg_chk ############################
+void arg_chk()
+{
+  if (argc != 5) { usage(); }
+
+  if (stat(argv[2], &st_dump) != 0) { printf("FAIL target_path %s", argv[2]); exit(1); }
+  if (stat(argv[3], &st_dump) != 0) { printf("FAIL dump_path %s", argv[3]); exit(1); }
+  if (stat(argv[4], &st_dump) != 0) { printf("FAIL key_path %s", argv[4]); exit(1); }
+}
+
+//#####################################
+// SLICR - shred file into random-sized blocks
+//       - verify the file afterword is costly
+//       - run this to check new system only
+//
+// FreeBSD-kernel-only
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <sha256.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+// GLOBAL
+#define SHALEN 65
+#define SIZE 1000000 // 1B -> 1MB
+// USAGE
+static void usage()
+  { printf("usage: SLICR target_file dump_path key_path\n"); exit(1); }
+int build(char *f_block, char *v_file);
+// BEGIN ##############################
+int main(int argc, char *argv[])
+{
+// ARG CHK
+  if (argc != 4)
+    { usage(); }
+  struct stat st_dump;
+
+  if (stat(argv[2], &st_dump) != 0)
+    { printf("FAIL dump_path %s", argv[2]); exit(1); }
+  if (stat(argv[3], &st_dump) != 0)
+    { printf("FAIL key_path %s", argv[3]); exit(1); }
+// DECLARE 
+  FILE *fp, *kfp, *kkfp;
+  
+  unsigned long long int f_size, position = 0;
+
+  char *key_path, *dump_path;
+  char *f_sha, *v_sha;
+  char *f_key, *v_file;
+  char k_line[66];
+  
+  size_t len; 
+// SANITIZE
+  dump_path = malloc(strlen(argv[2]) + 100);
+  strcpy(dump_path, argv[2]);
+  if (dump_path[strlen(dump_path) - 1] != '/')
+    { strcat(dump_path, "/"); }
+
+  key_path = malloc(strlen(argv[3] + 100);
+  strcpy(key_path, argv[3]);)
+  if (key_path[strlen(key_path) - 1] != '/')
+    { strcat(key_path, "/"); }
+// TARGET FILE
+  if ((fp = fopen(argv[1], "rb")) < 0) 
+    { printf("FAIL fopen(fp) at%s\n", argv[1]); }
+
+  fseek(fp, 0, SEEK_END);
+  f_size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  f_sha = SHA256_File(argv[1], NULL);
+// KEY FILE
+  f_key = malloc(strlen(argv[3]) + 100);
+  strcpy(f_key, key_path);
+  strcat(f_key, f_sha);
+
+  if ((kfp = fopen(f_key, "wb")) < 0)
+    { printf("FAIL fopen(f_key) at: %s\n", argv[3]); exit(1); }
+// SLICE //////////////////////////////
+  while (position < f_size)
+  {
+// DECLARE
+    FILE *bbfp;
+    uint32_t size, read_size;
+    char *buf, *b_sha, *ff_block;
+// block SIZE 
+    size = arc4random((uint32_t) SIZE);
+    if (size == 0)
+      { continue; }
+
+    if (position + size >= f_size)
+      { size = f_size - position; }
+    
+    if ((buf = malloc(size)) == NULL)
+      { printf("FAIL memory buf pos: %llu\n", position); exit(1); }
+// write block
+    if ((read_size = fread(buf, 1, (size_t) size, fp)) != size)
+      { printf("FAIL read mismatch size: %u read_size: %u\n", size, read_size); exit(1); }
+// sha block
+    b_sha = SHA256_FileChunk(argv[1], NULL, (off_t) position, (off_t) size);
+    ff_block = malloc(strlen(argv[2]) + 100);
+    strcpy(ff_block, dump_path);
+    strcat(ff_block, b_sha);
+
+    if ((bbfp = fopen(ff_block, "wb")) < 0)
+      { printf("FAIL ff_block open pos: %llu\n", position); exit(1); }
+
+    if ((fwrite(buf, 1, (size_t) size, bbfp)) != size)
+      { printf("FAIL write block: %llu \n", position); exit(1); }
+// write key
+    fwrite(b_sha, 1, 64, kfp);
+    fwrite("\n", 1, 1, kfp);
+
+   // printf("%s %s %llu\n", f_key, b_sha, position);
+    position += size;
+///////////////////////////////////////
+// cleanup
+    free(buf); free(b_sha); free(ff_block); 
+    fclose(bbfp);
+  }
+
+  fclose(kfp);
+// VERIFICATION BUILD &&&&&&&&&&&&&&&&&
+  v_file = malloc(strlen(argv[3]) + 10);
+  strcpy(v_file, key_path);
+  strcat(v_file, "tmp"); 
+
+  if ((kkfp = fopen(f_key, "rb")) < 0)
+    { printf("FAIL fopen(f_key) at: %s\n", f_key); exit(1); }
+
+  unlink(v_file); // remove previous tmp-file
+// build verification-file
+  while(fgets(k_line, 66, kkfp) != NULL)
+  {
+    if (k_line[strlen(k_line) - 1] =='\n')
+      { k_line[strlen(k_line) - 1] = '\0'; }
+
+    char *fff_block = malloc(strlen(argv[2]) + 100);
+    strcpy(fff_block, dump_path);
+    strcat(fff_block, k_line); 
+// FN 
+    if ((build(fff_block, v_file)) < 0) 
+      { printf("FAIL push(v_file) at: %s\n", f_key); exit(1); }
+    
+    free(fff_block);
+  }
+// INTEGRITY CHK
+  v_sha = SHA256_File(v_file, NULL);
+  if ((strcmp(f_sha, v_sha)) != 0)
+    { printf("FAIL VERIFICATION with %s bad: %s\n", f_key, v_sha); exit(1); }
+  printf("f: %s v: %s\n", f_sha, v_sha);
+// cleanup
+  fclose(fp); fclose(kkfp);
+  free(key_path); free(dump_path); 
+  free(f_key); free(v_file);
+  free(f_sha); free(v_sha);
+  return 0;
+}
+// FN #################################
+int build(char *f_block, char *v_file)
+{
+  FILE *vfp, *bfp;
+  unsigned long int b_size, writ_size;
+  char *buf;
+// verification file
+  if ((vfp = fopen(v_file, "ab")) < 0)
+    { printf("FAIL fopen(v_file) at: %s\n",v_file); exit(1); }
+// block file 
+  if ((bfp = fopen(f_block, "rb")) < 0)
+    { printf("FAIL fopen(f_block) at: %s\n",f_block); exit(1); }
+
+  fseek(bfp, 0, SEEK_END);
+  b_size = ftell(bfp);
+  fseek(bfp, 0, SEEK_SET);
+
+  if ((buf = malloc(b_size)) == NULL) 
+    { printf("FAIL out of memory buf b_size: %lu\n", b_size); exit(1); }
+// read block-file
+  if ((writ_size = fread(buf, 1, (size_t) b_size, bfp)) != b_size)
+    { printf("FAIL write size mismatch b_size: %lu writ_size: %lu\n", b_size, writ_size); exit(1); }
+
+// write verification-file
+  if ((fwrite(buf, 1, (size_t) b_size, vfp)) != b_size)
+    { printf("FAIL write v_fp: %s \n", v_file); exit(1); }
+
+// cleanup
+  fclose(vfp); fclose(bfp);
+  free(buf);
+
+  return 0;
+}
+
+//#####################################
+// SLICR - shred file batches into random sizes
+// FreeBSD
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <sha256.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+// GLOBAL
+#define SHALEN 100 
+#define SIZE 1000000 // BLOCK MAX = 1MB
+#define SIZE 100000 // BLOCK MAX = 100KB
+#define SIZE 1000000 // BLOCK MAX = KB
+#define MAX 10000 // list
+// USAGE
+static void usage()
+  { printf("usage: SLICR target_list target_path dump_path key_path\n"); exit(1); }
+int slicr(char *target_file, char *dump_path, char *key_path);
+int build(char *f_block, char *v_file);
+int main(int argc, char *argv[])
+{
+// ARG CHK
+  struct stat st_dump;
+  int cnt;
+  char *target_list, *target_path, *dump_path, *key_path, *target_file;
+
+  if (argc != 5)
+    { usage(); }
+
+  if (stat(argv[2], &st_dump) != 0)
+    { printf("FAIL target_path %s", argv[2]); exit(1); }
+  if (stat(argv[3], &st_dump) != 0)
+    { printf("FAIL dump_path %s", argv[3]); exit(1); }
+  if (stat(argv[4], &st_dump) != 0)
+    { printf("FAIL key_path %s", argv[4]); exit(1); }
+
+// SANITIZE
+  target_list = malloc(strlen(argv[1]) + SHALEN);
+  target_path = malloc(strlen(argv[2]) + SHALEN);
+  dump_path = malloc(strlen(argv[3]) + SHALEN);
+  key_path = malloc(strlen(argv[4]) + SHALEN);
+
+  strcpy(target_list, argv[1]);
+  strcpy(target_path, argv[2]);
+  strcpy(dump_path, argv[3]);
+  strcpy(key_path, argv[4]);
+
+  if (target_path[strlen(target_path) - 1] != '/')
+    { strcat(target_path, "/"); }
+  if (dump_path[strlen(dump_path) - 1] != '/')
+    { strcat(dump_path, "/"); }
+  if (key_path[strlen(key_path) - 1] != '/')
+    { strcat(key_path, "/"); }
+
+// LIST ###############################
+  FILE *lfp;
+  char list_line[66];
+  
+  if ((lfp = fopen(target_list, "rb")) < 0)
+    { printf("FAIL fopen(fp) at: %s\n", target_list); }
+
+  while (fgets(list_line, 66, lfp) != NULL)
+  {
+    if (list_line[strlen(list_line) - 1] == '\n')
+      { list_line[strlen(list_line) - 1] = '\0'; }
+
+// WORK LIST ##########################
+    target_file = malloc(strlen(target_path) + 66);
+    strcpy(target_file, target_path);
+    strcat(target_file, list_line);
+// ACTION
+    slicr(target_file, dump_path, key_path);
+    printf("%d ", cnt); cnt++;
+//  cleanup
+    free(target_file);
+  }
+  free(target_path); free(dump_path); free(key_path); free(target_list);
+}
+// slicr ##############################
+int slicr(char *target_file, char *dump_path, char *key_path)
+{
+// DECLARE
+  FILE *fp, *kfp, *kkfp;
+
+  unsigned long long int f_size, position = 0;
+
+  char *f_sha, *v_sha;
+  char *f_key, *v_file;
+  char k_line[66];
+
+  size_t len;
+// TARGET FILE
+  if ((fp = fopen(target_file, "rb")) < 0)
+    { printf("FAIL fopen(fp) at%s\n", target_file); }
+
+  fseek(fp, 0, SEEK_END);
+  f_size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  f_sha = SHA256_File(target_file, NULL);
+// KEY FILE
+  f_key = malloc(strlen(key_path) + 100);
+  strcpy(f_key, key_path);
+  strcat(f_key, f_sha);
+
+  if ((kfp = fopen(f_key, "wb")) < 0)
+    { printf("FAIL fopen(f_key) at: %s\n", key_path); exit(1); }
+// SLICE //////////////////////////////
+  while (position < f_size)
+  {
+// DECLARE
+    FILE *bbfp;
+    uint32_t size, read_size;
+    char *buf, *b_sha, *ff_block;
+// block SIZE
+    size = arc4random((uint32_t) SIZE);
+    if (size == 0)
+      { continue; }
+
+    if (position + size >= f_size)
+      { size = f_size - position; }
+    if ((buf = malloc(size)) == NULL)
+      { printf("FAIL memory buf pos: %llu\n", position); exit(1); }
+// write block
+    if ((read_size = fread(buf, 1, (size_t) size, fp)) != size)
+      { printf("FAIL read mismatch size: %u read_size: %u\n", size, read_size); exit(1); }
+// sha block
+    b_sha = SHA256_FileChunk(target_file, NULL, (off_t) position, (off_t) size);
+    ff_block = malloc(strlen(dump_path) + 66);
+    strcpy(ff_block, dump_path);
+    strcat(ff_block, b_sha);
+
+    if ((bbfp = fopen(ff_block, "wb")) < 0)
+      { printf("FAIL ff_block open pos: %llu\n", position); exit(1); }
+
+    if ((fwrite(buf, 1, (size_t) size, bbfp)) != size)
+      { printf("FAIL write block: %llu \n", position); exit(1); }
+// write key
+    fwrite(b_sha, 1, 64, kfp);
+    fwrite("\n", 1, 1, kfp);
+
+   // printf("%s %s %llu\n", f_key, b_sha, position);
+    position += size;
+///////////////////////////////////////
+// cleanup
+    free(buf); free(b_sha); free(ff_block);
+    fclose(bbfp);
+  }
+  fclose(kfp);
+// VERIFICATION BUILD #################
+  v_file = malloc(strlen(key_path) + 10);
+  strcpy(v_file, key_path);
+  strcat(v_file, "tmp");
+
+  if ((kkfp = fopen(f_key, "rb")) < 0)
+    { printf("FAIL fopen(f_key) at: %s\n", f_key); exit(1); }
+
+  unlink(v_file); // remove previous tmp-file
+// build verification-file
+  while(fgets(k_line, 66, kkfp) != NULL)
+  {
+    if (k_line[strlen(k_line) - 1] =='\n')
+      { k_line[strlen(k_line) - 1] = '\0'; }
+
+    char *fff_block = malloc(strlen(dump_path) + 66);
+    strcpy(fff_block, dump_path);
+    strcat(fff_block, k_line);
+// FN
+    if ((build(fff_block, v_file)) < 0)
+      { printf("FAIL push(v_file) at: %s\n", f_key); exit(1); }
+
+    free(fff_block);
+  }
+// INTEGRITY CHK
+  v_sha = SHA256_File(v_file, NULL);
+  if ((strcmp(f_sha, v_sha)) != 0)
+    { printf("FAIL VERIFICATION with %s bad: %s\n", f_key, v_sha); exit(1); }
+  printf("f: %s v: %s\n", f_sha, v_sha);
+// cleanup
+  fclose(fp); fclose(kkfp);
+  free(f_key); free(v_file);
+  free(f_sha); free(v_sha);
+  return 0;
+}
+// build ##############################
+int build(char *f_block, char *v_file)
+{
+  FILE *vfp, *bfp;
+  unsigned long int b_size, writ_size;
+  char *buf;
+// verification file
+  if ((vfp = fopen(v_file, "ab")) < 0)
+    { printf("FAIL fopen(v_file) at: %s\n",v_file); exit(1); }
+// block file
+  if ((bfp = fopen(f_block, "rb")) < 0)
+    { printf("FAIL fopen(f_block) at: %s\n",f_block); exit(1); }
+
+  fseek(bfp, 0, SEEK_END);
+  b_size = ftell(bfp);
+  fseek(bfp, 0, SEEK_SET);
+
+  if ((buf = malloc(b_size)) == NULL)
+    { printf("FAIL out of memory buf b_size: %lu\n", b_size); exit(1); }
+// read block-file
+  if ((writ_size = fread(buf, 1, (size_t) b_size, bfp)) != b_size)
+    { printf("FAIL write size mismatch b_size: %lu writ_size: %lu\n", b_size, writ_size); exit(1); }
+// write verification-file
+  if ((fwrite(buf, 1, (size_t) b_size, vfp)) != b_size)
+    { printf("FAIL write v_fp: %s \n", v_file); exit(1); }
+// cleanup
+  fclose(vfp); fclose(bfp);
+  free(buf);
+
+  return 0;
+}
+
+///////////////////////////////////////////
+// BUILD - take a batch of key-files to build from a block-pool
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sha256.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+// GLOBAL
+#define SHALEN 66
+#define SIZE 1000000 // 1B -> 1MB
+#define MAX 10000 // list
+// USAGE
+static void usage()
+  { printf("usage: BLKR key_list key_path block_path dump_path\n"); exit(1); }
+int build(char *target_file, char *block_path, char *dump_path);
+int main(int argc, char *argv[])
+{
+// ARG CHK
+  struct stat st_dump;
+  char *target_list, *key_path, *block_path, *dump_path, *target_file;
+
+  if (argc != 5)
+    { usage(); }
+
+  if (stat(argv[2], &st_dump) != 0)
+    { printf("FAIL key_path %s", argv[2]); exit(1); }
+  if (stat(argv[3], &st_dump) != 0)
+    { printf("FAIL block_path %s", argv[3]); exit(1); }
+  if (stat(argv[4], &st_dump) != 0)
+    { printf("FAIL dump_path %s", argv[4]); exit(1); }
+
+// SANITIZE
+  key_list = malloc(strlen(argv[1] + SHALEN));
+  key_path = malloc(strlen(argv[2] + SHALEN));
+  block_path = malloc(strlen(argv[3] + SHALEN));
+  dump_path = malloc(strlen(argv[4] + SHALEN));
+
+  strcpy(key_list, argv[1]);
+  strcpy(key_path, argv[2]);
+  strcpy(block_path, argv[3]);
+  strcpy(dump_path, argv[4]);
+
+  if (target_path[strlen(key_path) - 1] != '/')
+    { strcat(key_path, "/"); }
+  if (dump_path[strlen(block_path) - 1] != '/')
+    { strcat(block_path, "/"); }
+  if (key_path[strlen(dump_path) - 1] != '/')
+    { strcat(dump_path, "/"); }
+
+// LIST ###############################
+  FILE *lfp;
+  char list_line[66];
+  
+  if ((lfp = fopen(key_list, "rb")) < 0)
+    { printf("FAIL fopen(fp) at: %s\n", key_list); }
+
+  while (fgets(list_line, 66, lfp) != NULL)
+  {
+    if (list_line[strlen(list_line) - 1] == '\n')
+      { list_line[strlen(list_line) - 1] = '\0'; }
+
+// WORK LIST ##########################
+    target_file = malloc(strlen(target_path) + 66);
+    strcpy(target_file, key_path);
+    strcat(target_file, list_line);
+// ACTION
+    if ((build(target_file, block_path, dump_path)) < 0)
+      { printf("FAIL build target: %s block: %s dump: %s\n", target_file, block_path, dump_path); }
+//  cleanup
+    free(target_file);
+  }
+  free(target_path); free(key_path); free(block_path); free(dump_path); free(target_list);
+}
+
+int build(char *target_file, char *block_path, char *dump_path)
+{
+  FILE *vfp, *bfp;
+  unsigned long int b_size, writ_size;
+  char *buf, *v_file;
+// verification file
+  v_file = malloc(strlen(dump_path + SHALEN));
+  strcpy(v_file, dump_path);
+  strcat(vfile, "tmp");
+    
+  if ((vfp = fopen(v_file, "ab")) < 0)
+    { printf("FAIL fopen(v_file) at: %s\n",v_file); exit(1); }
+// block file
+  if ((bfp = fopen(f_block, "rb")) < 0)
+    { printf("FAIL fopen(f_block) at: %s\n",f_block); exit(1); }
+
+  fseek(bfp, 0, SEEK_END);
+  b_size = ftell(bfp);
+  fseek(bfp, 0, SEEK_SET);
+
+  if ((buf = malloc(b_size)) == NULL)
+    { printf("FAIL out of memory buf b_size: %lu\n", b_size); exit(1); }
+// read block-file
+  if ((writ_size = fread(buf, 1, (size_t) b_size, bfp)) != b_size)
+    { printf("FAIL write size mismatch b_size: %lu writ_size: %lu\n", b_size, writ_size); exit(1); }
+// write verification-file
+  if ((fwrite(buf, 1, (size_t) b_size, vfp)) != b_size)
+    { printf("FAIL write v_fp: %s \n", v_file); exit(1); }
+// cleanup
+  fclose(vfp); fclose(bfp);
+  free(buf);
+
+  return 0;
+}
+
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+use Digest::SHA;
+#######################################
+# SCRUB - output sha-stamped-lists
+#######################################
+my ($node, $pool, $log)=@ARGV;
+die "ARG1 node ARG2 location ARG3 log" if (!defined $log);
+$pool =~ %/\z%%;
+my $date = time;
+my $stamp = $node.'_'.$date;
+my $error = $log.'_ERROR';
+#######################################
+open(my $efh, '>>', $error);
+open(my $nfh, '>', $new);
+opendir(my $dh, $dir) or die "FAIL opendir $dir";
+#######################################
+my @list = readdir $dh;
+closedir $dh; chomp @list;
+#######################################
+for (@list)
+{
+	my $file = $_;
+	$file =~ $pool.'/'.$file;
+	my $sha=file_digest($file) or die "FAIL sha $file";
+#######################################
+	$file =~ s/.*\///;
+#######################################
+      	if ($sha ne $file) 
+		{ print $efh "FAIL sha $node $file\n"; next; }
+#######################################	
+	print $nfh "$file $stamp\n";
+}
+#######################################
+sub file_digest 
+{
     my ($filename)=@_;
     my $digest=Digest::SHA->new(256);
     $digest->addfile($filename, "b");
@@ -67515,10 +68296,10 @@ sub file_digest {
 }
 
 
-#/////////////////////////////////////////////////////////////////////////////////////////////
+
 #!/usr/local/bin/perl
-######################################################
 # # METACHK - confirm uniq file has meta
+# by skrp of MKRX
 use strict; use warnings;
 
 my ($fmaster, $mmaster) = @ARGV;
@@ -67531,44 +68312,54 @@ my @meta = readline $mfp; chomp @meta;
 my %mkrx = map{$_ => undef} @file;
 
 foreach my $meta (@meta) {
-        my $f = $meta =~ s/g//r;
-        $mkrx{$f} = $meta;
+	my $f = $meta =~ s/g//r;
+	$mkrx{$f} = $meta;
 }
 # UNDEF SCAN
 while (my ($key, $value) = each %mkrx) {
-        if (not defined $mkrx{$key} )
-                { print "$key: NEEDS FILE\n"; }
+	if (not defined $mkrx{$key} )
+		{ print "$key: NEEDS FILE\n"; }
 }
 # COUNT
 print "SICC POOL COUNT:\n";
 my $size = keys %mkrx;
 print "$size\n";
 exit 0;
-
-
-
-#/////////////////////////////////////////////////////////////////////////////////////////////
-
-#!/usr/local/bin/perl
-######################################################
-# UNIQ - cmp sha against uniq list
+ 
+ 
+ #!/usr/local/bin/perl
+# # METACHK - confirm uniq file has meta
+# by skrp of MKRX
 use strict; use warnings;
-my ($pmaster, $mmaster, $log) = @ARGV;
-open(my $pfp, '<', $pmaster) or die ("Couldn't open partialmaster\n");
-open(my $mfp, '<', $mmaster) or die ("Couldn't open master\n");
-open(my $lfp, '>>', $log) or die;
-my @pfile = readline $pfp; chomp @pfile;
-my @mfile = readline $mfp; chomp @mfile;
 
-my %mkrx = map{$_ => undef} @mfile;
-foreach my $p (@pfile) {
-        if (exists $mkrx{$p}) { next; }
-        else { print $lfp "$p\n"; }
+my ($fmaster, $mmaster) = @ARGV;
+open(my $ffp, '<', $fmaster) or die ("Couldn't open filemaster\n");
+open(my $mfp, '<', $mmaster) or die ("Couldn't open metamaster\n");
+
+my @file = readline $ffp; chomp @file;
+my @meta = readline $mfp; chomp @meta;
+
+my %mkrx = map{$_ => undef} @file;
+
+foreach my $meta (@meta) {
+	my $f = $meta =~ s/g//r;
+	$mkrx{$f} = $meta;
 }
-#/////////////////////////////////////////////////////////////////////////////////////////////
+# UNDEF SCAN
+while (my ($key, $value) = each %mkrx) {
+	if (not defined $mkrx{$key} )
+		{ print "$key: NEEDS FILE\n"; }
+}
+# COUNT
+print "SICC POOL COUNT:\n";
+my $size = keys %mkrx;
+print "$size\n";
+exit 0;
+ 
+ 
 #!/usr/local/bin/perl
-######################################################
 # SHA - extract sha recursively
+# by skrp of MKRX
 ##################################
 use strict; use warnings;
 use File::Find::Rule;
@@ -67585,10 +68376,10 @@ my $rule = File::Find::Rule->file()->start($target);
 my %response;
 while(defined(my $file = $rule->match)) {
     my ($sha) = file_digest($file) or die "couldn't sha $file";
-    $response{$file} = $sha;    
+    $response{$file} = $sha;	
 }
 while (my ($key, $value) = each %response) 
-        { print $lfh "$value:  $key\n"; }
+	{ print $lfh "$value:  $key\n"; }
 ########################
 # SHA FN
 sub file_digest {
@@ -67597,12 +68388,9 @@ sub file_digest {
     $digest->addfile($filename, "b");
     return $digest->hexdigest();
 }
-
-
-#/////////////////////////////////////////////////////////////////////////////////////////////
 #!/usr/local/bin/perl
-######################################################
 # POP.pl - use list to populate dump
+# by skrp of MKRX
 ##########################
 use strict; use warnings;
 use File::Copy;
@@ -67613,86 +68401,57 @@ open(my $logfp, '>>', $log) or die "Can't open log";
 my @list = readline $lfp; chomp @list;
 
 foreach my $i (@list) {
-        if (copy ($i, $dump)) { next; }
-        else { print $logfp "$i: not copied\n"; }
+	if (copy ($i, $dump)) { next; }
+	else { print $logfp "$i: not copied\n"; }
 }
 
 my $count = @list;
 print "files: $count\nI gracefully exit\n"; exit 0;
 
-
-#/////////////////////////////////////////////////////////////////////////////////////////////
-#!/usr/local/bin/perl
-use strict; use warnings;
-######################################################
-# INDEX - create metadata dumps
-use File::Find::Rule;
-
-my ($g_dir, $dump_dir) = @ARGV;
-if (not defined $g_dir) {die "USAGE: ARGV1 g dir ARGV2 dump dir";}
-if (not defined $dump_dir) {die "USAGE: ARGV1 g dir ARGV2 dump dir";}
-
-$dump_dir =~ s%/\z%%;
-my $NAME = "$dump_dir/NAM";
-my $PATH = "$dump_dir/PAT";
-my $SIZE = "$dump_dir/SIZ";
-my $ENCODE = "$dump_dir/ENC";
-open(my $nam, '>>', $NAME) or die ("Couldn't open NAM");
-open(my $pat, '>>', $PATH) or die ("Couldn't open PAT");
-open(my $siz, '>>', $SIZE) or die ("Couldn't open SIZ");
-open(my $enc, '>>', $ENCODE) or die ("Couldn't open ENC");
-
-my $rule = File::Find::Rule->file()->start($g_dir);
-
-while (defined(my $file = $rule->match)) {
-        open(my $ifh, '<', $file) or die "couldn't open $file\n";
-        my @tmp = readline $ifh; chomp @tmp;
-        print $nam "$tmp[0]\n"; 
-        print $pat "$tmp[1]\n"; 
-        print $siz "$tmp[2]\n"; 
-        print $enc "$tmp[3]\n"; 
-        close $ifh;
-}
-close $nam; close $pat; close $siz; close $enc;
-print "INDEX POPULATED\n";
-
-
-#/////////////////////////////////////////////////////////////////////////////////////////////
 #!/usr/local/bin/perl
 use strict; use warnings;
 use File::Find::Rule;
-####################################
-# HASH - populate hash via metafiles
-# SETUP ############################
-my ($target) = @ARGV;
-my $rule = File::Find::Rule->file()->start($target);
-# comment out to reduce massive size in memory
-my $nnfd = 'NAM';
-open(my $nfd, '>>', $nnfd);
-my $ppfd = 'PAT';
-open(my $pfd, '>>', $ppfd);
-my $zzfd = 'SIZ';
-open(my $zfd, '>>', $zzfd);
-my $eefd = 'ENC';
-open(my $efd, '>>', $eefd);
-# POPULATE HASH METAFILES ###########
+############################################################
+# METAMASTER - scrape metadata-files to metadata masterfiles
+############################################### skrp of MKRX
+# this process is io intensive
+# format of each metadata masterfile => "file-sha metadata-value\n"
+# EXAMPLE: "922440e6b538bc9e7dd72b58084d2712cd770f61f370261f5bf6528b5f8d3083 FreeBSD-10.3-RELEASE-amd64-memstick.img\n" >> NAM
+
+# SETUP #############################################
+# ARG1 is the metadata directory
+my ($metadata_dir) = @ARGV;
+die "ARG1 metadata dir" if (!defined $metadata_dir);
+
+my $rule = File::Find::Rule->file()->start($metadata_dir);
+
+my $nmaster = 'NAM';
+open(my $nfd, '>>', $nmaster);
+my $pmaster = 'PAT';
+open(my $pfd, '>>', $pmaster);
+my $zmaster = 'SIZ';
+open(my $zfd, '>>', $zmaster);
+my $emaster = 'ENC';
+open(my $efd, '>>', $emaster);
+
+# POPULATE HASH METAFILES ##################
 while (defined(my $file = $rule->match)) {
-        open(my $fd, '<', $file); 
-        my @f = readline $fd;
-        chomp @f;
-        my $fsha = $file =~ s%.*\/%%r;
-        print $nfd "$fsha $f[0]\n";
-        print $pfd "$fsha $f[1]\n";
-        print $zfd "$fsha $f[2]\n";
-        print $efd "$fsha $f[3]\n";
-        close $fd;
+	open(my $fd, '<', $file); 
+	my @f = readline $fd;
+	chomp @f;
+	my $fsha = $file =~ s%.*\/%%r;
+	print $nfd "$fsha $f[0]\n";
+	print $pfd "$fsha $f[1]\n";
+	print $zfd "$fsha $f[2]\n";
+	print $efd "$fsha $f[3]\n";
+	close $fd;
 }
 
-#/////////////////////////////////////////////////////////////////////////////////////////////
 #!/usr/local/bin/perl
 use strict; use warnings;
 ################################
 # FILT - metadata user interface
+#   feat. ningu irc.freenode.net
 
 # ARGS & FRIENDS ################
 my %master;
@@ -67703,152 +68462,274 @@ die "no dir $data_dir" unless -d $data_dir;
 $data_dir =~ s%/\z%%;
 # POPULATE HASHES ################
 foreach my $comm (@commands)
-        { read_file(uc substr($comm, 0, 3), $comm); }
+	{ read_file(uc substr($comm, 0, 3), $comm); }
 my @masterkeyset = keys %{$master{$commands[0]}};
 my @keyset = @masterkeyset;
 # PROMPT ##########################
 while (1) {
-        prmpt();
-        my $input = <STDIN>; chomp $input;
-        print "\nwork'n on $input\n";
-        my ($comm, $string) = split(' ', $input, 2);
+	prmpt();
+	my $input = <STDIN>; chomp $input;
+	print "\nwork'n on $input\n";
+	my ($comm, $string) = split(' ', $input, 2);
 # RESET ############################
-        if ($comm eq 'reset')
-                { @keyset = @masterkeyset; }
+	if ($comm eq 'reset')
+		{ @keyset = @masterkeyset; }
 # LOAD #############################
-        elsif ($comm eq 'load') { 
-                my $load_keyset = $string;
-                open(my $loadfh, '<', $load_keyset); 
-                @newkeyset = readline $loadfh; chomp @newkeyset;
-        }
+	elsif ($comm eq 'load') { 
+		my $load_keyset = $string;
+		open(my $loadfh, '<', $load_keyset); 
+		@newkeyset = readline $loadfh; chomp @newkeyset;
+	}
 # PRINT ############################
-        elsif ($comm eq 'print') {
-                my $pfh = crfile($string);
-                foreach my $key (@keyset)
-                        { print $pfh "$key\n"; }
-                close $pfh;
-        }
+	elsif ($comm eq 'print') {
+		my $pfh = crfile($string);
+		foreach my $key (@keyset)
+			{ print $pfh "$key\n"; }
+		close $pfh;
+	}
 # COUNT ##############################
-        elsif ($comm eq 'count')
-                { my $cnt = @keyset; print "CURRENT: $cnt\n"; }
+	elsif ($comm eq 'count')
+		{ my $cnt = @keyset; print "CURRENT: $cnt\n"; }
 # VALUE ##############################
-        elsif ($comm eq 'value') {
-                my %descript = %{$master{$string}};
-                foreach my $key (@keyset)
-                        { print "$descript{$key}\n"; }
-        }
+	elsif ($comm eq 'value') {
+		my %descript = %{$master{$string}};
+		foreach my $key (@keyset)
+			{ print "$descript{$key}\n"; }
+	}
 # GREP ###############################
-        elsif ($master{$comm})
-                { layer_s($comm, $string); }
+	elsif ($master{$comm})
+		{ layer_s($comm, $string); }
 # POPULATE ############################
-        elsif ($comm eq 'pop') {
-                my $target_size = $string;
-                my %pop = %{$master{"size"}};
-                my $pfh = crfile($target_size);
-                my $ofh = crfile("leftover_$target_size");
-                my $cur_size = 0; my @leftokeys = @keyset;
-                foreach my $key (@keyset) {
-                        my $iter_amt = $pop{$key};
-                        $cur_size += $iter_amt;
-                        if ($cur_size < $target_size) {
-                                my $index = 0; 
-                                $index++ until $keyset[$index] eq $key;
-                                splice(@keyset, $index, 1);
-                                print $pfh "$key:$iter_amt:$cur_size\n";
-                        }
-                        else 
-                                { print $ofh "$key:$iter_amt:$cur_size\n"; }
-                }
-                close $pfh; close $ofh;
-        }
+	elsif ($comm eq 'pop') {
+		my $target_size = $string;
+		my %pop = %{$master{"size"}};
+		my $pfh = crfile($target_size);
+		my $ofh = crfile("leftover_$target_size");
+		my $cur_size = 0; my @leftokeys = @keyset;
+		foreach my $key (@keyset) {
+			my $iter_amt = $pop{$key};
+			$cur_size += $iter_amt;
+			if ($cur_size < $target_size) {
+				my $index = 0; 
+				$index++ until $keyset[$index] eq $key;
+				splice(@keyset, $index, 1);
+				print $pfh "$key:$iter_amt:$cur_size\n";
+			}
+			else 
+				{ print $ofh "$key:$iter_amt:$cur_size\n"; }
+		}
+		close $pfh; close $ofh;
+	}
 # DEFAULT ##############################
-        else { print "unknown command $comm\n"; }
+	else { print "unknown command $comm\n"; }
 } # SUBS ###############################
 sub read_file {
-        my ($filename, $cmd) = @_;
-        my $path = "$data_dir/$filename";
-        open(my $fh, '<', $path) or die "Couldn't open $filename\n";
-        my @lines = readline $fh; chomp @lines; close $fh;
-        my %sub_hash;
-        foreach my $i (@lines) {
-                my @key_value = split(" ", $i, 2);
-                $sub_hash{$key_value[0]} = $key_value[1];
-        }
-        $master{$cmd} = \%sub_hash;
+	my ($filename, $cmd) = @_;
+	my $path = "$data_dir/$filename";
+	open(my $fh, '<', $path) or die "Couldn't open $filename at sub read_file\n";
+	my @lines = readline $fh; chomp @lines; close $fh;
+	my %sub_hash;
+	foreach my $i (@lines) {
+		my @key_value = split(" ", $i, 2);
+		$sub_hash{$key_value[0]} = $key_value[1];
+	}
+	$master{$cmd} = \%sub_hash;
 }
 sub layer_s {
-        my ($cmd, $string) = @_;
-        my $sub_hash = $master{$cmd};
-        @keyset = grep { $sub_hash->{$_} =~ /$string/i } @keyset;
-        foreach my $key (@keyset)
-                { print "$key\n"; }
+	my ($cmd, $string) = @_;
+	my $sub_hash = $master{$cmd};
+	@keyset = grep { $sub_hash->{$_} =~ /$string/i } @keyset;
+	foreach my $key (@keyset)
+		{ print "$key\n"; }
 }
 sub crfile {
-        my ($fname) = @_;
-        my $sub_path = "$data_dir/$fname";
-        if (-e $sub_path)
-                { print "$sub_path already exists"; exit; }
-        open(my $sfh, '>>', $sub_path) or die "cant open $sub_path";
-        print "listing save to $sub_path\n";
-        return $sfh;
+	my ($fname) = @_;
+	my $sub_path = "$data_dir/$fname";
+	if (-e $sub_path)
+		{ print "$sub_path already exists"; exit; }
+	open(my $sfh, '>>', $sub_path) or die "cant open $sub_path";
+	print "listing save to $sub_path\n";
+	return $sfh;
 }
 sub prmpt {
-        print "usage:  type \$string  || reset  ||  print \$filename\n";
-        print "        load \$file || count  ||  value \$type ||  pop \$amt\n";
-        print "MKRX SYSTEMS RDY: ";
+	print "usage:  type \$string  || reset  ||  print \$filename\n";
+	print "        load \$file || count  ||  value \$type ||  pop \$amt\n";
+	print "MKRX SYSTEMS RDY: ";
 }
 
+#!/usr/local/bin/perl
+use strict; use warnings;
+#####################################################
+# CENSUS - locations of files
+#####################################################
+my %LIST;
+my @list;
+#####################################################
+@list = glob("/net/*_LIST");
+shift @list; shift @list;
+#####################################################
+for (@list)
+{
+  my $ifile = $_;
+  open(my $ifh, '<', $ifile);
+  my @i = readline $ifh;
+  close $ifh; chomp @i;
+#####################################################
+  for (@i)
+  {
+    my $iline = $_;
+    my @line = split(" ", 2, $iline);
+    $LIST{$line[0]} .= " $line[1]";
+  }
+}
+#####################################################
+print "$_$LIST{$_}\n" for (keys %LIST);
 
-#/////////////////////////////////////////////////////////////////////////////////////////////
-#!/usr/local/bin/bash
-#
-######################################
-# Xtract & Standardize
-# Files Recursively
-######################################
-#
-# USAGE
-if (( $# != 2 ))
-then
-  printf "\nUsage: \n";
-  printf "ARG1 - Directory to Extract\n";
-  printf "ARG2 - Directory to Dump\n";
-  exit 1;
-fi
-#
-# ARGUMENTS
-target=${1%/}
-dump=${2%/}
-#
-# LOCATIONS
-# $target = where to extract
-# $dump = where to store
-# $dump/meta/ = where to store file metadata
-# $dump/xs_log_cp$d = log for copy errors
-#
-# CHECK DIR
-[[ -d "$target" ]] || { echo >&2 "ERROR: you didn't specify a valid EXTRACT directory"; exit 1; }
-[[ -d "$dump" ]] || { echo >&2 "ERROR: you didn't specify a valid DUMP directory"; exit 1; }
-#
-# BEGIN
-shopt -s globstar;
-for file in "$target"/**/*
-do
-  [[ -d "$file" ]] && continue # skipping directories
-# EXTRACT METADATA
-  d=$( date +%d%m%y_%H%M )
-  dir=${file%/*}
-  path=${dir//[ \/]/_}
-  base=${file##*/}
-  name=${base//[ \/]/.}
-# SHA FILE
-  sha="$( sha256 "$file" |  awk '{ print $NF }' )"
-# EXTRACT FILE
-  cp "$file" "$dump"/pool/"$sha" || echo "ERROR: couldn't cp '$file'" >> "$dump"/xs_log_cp.$d;
-  printf "%s\n" "$name" >> "$dump"/meta/m"$sha";
-  printf "%s\n" "$path" >> "$dump"/meta/m"$sha";
-done
+use strict; use warnings;
+##############################################
+# LONE - discover unduplicated files
+##############################################
+my @lines;
+my $hn = system("hostname");
+##############################################
+open(my $cfh, '<', "/net/$hn");
+@lines = readline $cfh;
+close $cfh; chomp @lines;
+##############################################
+for (@lines)
+{
+  my @array = split(" ", $_};
+  my $cnt =  0;
+##############################################
+  $cnt++ for (@array);
+  print "$array[0] $array[1]\n" if ($cnt == 2);
+}
 
+#!/usr/local/bin/perl
+use strict; use warnings;
+##################################
+# CNT - count files in pool
+##################################
+my $cnt=0;
+my ($dir) = @ARGV;
+die "ARG1 DIR" if (!defined $dir);
+##################################
+opendir(my $dh, $dir) or die "FAIL $dir\n";
+##################################
+$cnt++ while (readdir $dh);
+print "$cnt\n";
+##################################
+
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+#########################################
+# BORED - idle massive output
+#########################################
+my $gfh;
+my @color = qw(blue yellow cyan magenta);
+my @g;
+my $rset = 0;
+my $hn = system("hostname");
+#########################################
+if (-e '/tmp/BORED') 
+ { open(my $gfh, '<', '/tmp/BORED'); }
+else 
+ { open(my $gfh, '<', "/net/$hn"); }
+#########################################
+@g = readline $gfh;
+close $gfh; chomp @g;
+#########################################
+print "TTL: @g\n";
+while ($i = shift @g)
+{
+  sleep 1;
+#########################################  
+  my $color = $color[rand @color]; 
+#########################################  
+  print color 'red';
+  my @i = split(" ", $i);
+  print "$i[0]";
+#########################################  
+  print color $color;
+  print " $_" for (@i);
+  print "\n";
+#########################################
+  print color 'white';
+  print "0\n0\n0\n0\n";
+  print color 'reset';
+#########################################  
+  if ($rset % 100000 == 0)
+  {
+    open(my $tfh, '>', '/tmp/BORED');
+    print $tfh "$_\n" for @g;
+    close $tfh;
+  }
+#########################################  
+  $rset++;
+}
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+###############################
+# BEEP - drive blinker
+my ($drive) = @ARGV;
+
+while (1)
+{
+  system("dd if=/dev/$drive of=/dev/null");
+  sleep 2;
+  system("dd if=/dev/$drive of=/dev/null");
+  sleep 1;
+  print "fktheworld\n";
+}
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+###########################
+# CP - copy a list of files
+use File::Copy;
+###########################
+my ($list, $target, $dump) = @ARGV;
+die "ARG1 list ARG2 target ARG3 dump" if (!defined $dump);
+$dir =~ s%/\z%%;
+###########################
+open(my $lfh, '<', $list);
+my @list = readline $lfh;
+close $lfh; chomp @list;
+###########################
+my $cnt = 0;
+for my $line (@list)
+{
+###########################
+  if (-e $f)
+    { copy($f, $dump) or printf("FAIL %s cnt: %d\n", $f, $cnt++); }
+}
+###########################
+
+
+#!/usr/local/bin/perl
+use strict; use warnings;
+###########################
+# MV - move a list of files
+use File::Copy;
+###########################
+my ($list, $target, $dump) = @ARGV;
+die "ARG1 list ARG2 target ARG3 dump" if (!defined $dump);
+$dir =~ s%/\z%%;
+###########################
+open(my $lfh, '<', $list);
+my @list = readline $lfh;
+close $lfh; chomp @list;
+###########################
+my $cnt = 0;
+for my $line (@list)
+{
+###########################
+  if (-e $f)
+    { move($f, $dump) or printf("FAIL %s cnt: %d\n", $f, $cnt++); }
+}
+###########################
 
 
 
